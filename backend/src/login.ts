@@ -15,6 +15,7 @@ async function run() {
 
     const context = await chromium.launchPersistentContext(userDataDir, {
         headless: false,
+        bypassCSP: true,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',

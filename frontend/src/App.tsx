@@ -254,7 +254,7 @@ function AdminDashboard() {
   // Busca o status do orquestrador de bots, do calendário e da fila
   const fetchStatus = async () => {
     try {
-      const resBot = await fetch('/api/bot/status');
+      const resBot = await fetch('/api/bot/status?role=receiver');
       const dataBot = await resBot.json();
       setActiveBot(dataBot.activeBot);
       setTransitionBot(dataBot.transitionBot);
@@ -1446,6 +1446,7 @@ function TransmitterDashboard() {
   
   const [activeBot, setActiveBot] = useState<BotInstanceStatus | null>(null);
   const [transitionBot, setTransitionBot] = useState<BotInstanceStatus | null>(null);
+  const [isReceiverOnline, setIsReceiverOnline] = useState<boolean>(false);
   
   const [secondsLeft, setSecondsLeft] = useState<number>(0);
   const [activeMeetingName, setActiveMeetingName] = useState<string>('Nenhuma');
@@ -1546,6 +1547,7 @@ function TransmitterDashboard() {
         setServerConnected(true);
         setActiveBot(data.activeBot);
         setTransitionBot(data.transitionBot);
+        setIsReceiverOnline(data.isReceiverOnline ?? false);
         setSecondsLeft(data.secondsLeft ?? 0);
         setActiveMeetingName(data.activeMeetingName ?? 'Nenhuma');
         setMeetingSource(data.source ?? 'manual');
@@ -1798,7 +1800,7 @@ function TransmitterDashboard() {
     }
   };
 
-  const isReceiverOnline = !!activeBot;
+  
   const currentUrl = (transitionBot && transitionBot.meetUrl) || (activeBot && activeBot.meetUrl);
 
   return (
@@ -2189,6 +2191,45 @@ function TransmitterDashboard() {
                   </>
                 )}
               </p>
+            </div>
+          </div>
+
+          {/* VERIFICADOR DE CONTA GOOGLE (APRESENTADOR - BRAIN) */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl relative overflow-hidden text-left">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl pointer-events-none" />
+            <h3 className="text-sm font-bold text-white flex items-center gap-2 mb-3">
+              <CheckCircle2 className="w-5 h-5 text-indigo-400" />
+              Sua Conta Google Meet (Apresentador)
+            </h3>
+            
+            <p className="text-[11px] text-slate-400 leading-relaxed mb-4">
+              O transmissor abre as reuniões diretamente no seu navegador Chrome atual. É essencial estar logado com a conta da <strong>Brain</strong> para entrar nas reuniões como apresentador oficial.
+            </p>
+
+            <div className="bg-slate-950/60 border border-slate-850 p-4 rounded-xl space-y-3">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-500">Status Local do Navegador:</span>
+                <span className="text-indigo-400 font-bold bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+                  Chrome Ativo
+                </span>
+              </div>
+              
+              <div className="flex items-start gap-2.5 pt-2.5 border-t border-slate-900">
+                <div className="w-2 h-2 rounded-full bg-indigo-500 mt-1.5 animate-pulse" />
+                <p className="text-[10px] text-slate-450 leading-relaxed">
+                  Para conferir qual conta está logada neste momento, clique no botão abaixo para abrir a página do Google em uma nova aba e certifique-se de que é a conta <strong>Brain</strong>.
+                </p>
+              </div>
+
+              <a 
+                href="https://myaccount.google.com/" 
+                target="_blank" 
+                rel="noreferrer"
+                className="w-full bg-slate-900 hover:bg-slate-850 border border-slate-800 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all text-indigo-450 hover:text-indigo-300"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                Verificar Minha Conta Google Atual 🔎
+              </a>
             </div>
           </div>
 

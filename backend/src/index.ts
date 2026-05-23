@@ -92,8 +92,9 @@ async function getSecondsLeft(): Promise<{ secondsLeft: number; activeMeetingNam
     return { secondsLeft: 0, activeMeetingName: 'Nenhuma', source: 'manual' };
 }
 
-// Variável global para rastrear presença do Transmissor (Brain)
+// Variável global para rastrear presença do Transmissor (Brain) e do Receptor (Admin)
 let lastTransmitterHeartbeat = 0;
+let lastReceiverHeartbeat = 0;
 
 // Rota para buscar o status detalhado dos robôs ativos/transição
 app.get('/api/bot/status', async (req: any, res: any) => {
@@ -101,14 +102,20 @@ app.get('/api/bot/status', async (req: any, res: any) => {
     if (role === 'transmitter') {
         lastTransmitterHeartbeat = Date.now();
     }
+    if (role === 'receiver') {
+        lastReceiverHeartbeat = Date.now();
+    }
     
     const isTransmitterOnline = (Date.now() - lastTransmitterHeartbeat) < 7000;
+    const isReceiverOnline = (Date.now() - lastReceiverHeartbeat) < 7000;
+    
     const baseStatus = botManager.getStatus();
     const timeInfo = await getSecondsLeft();
     res.json({
         ...baseStatus,
         ...timeInfo,
-        isTransmitterOnline
+        isTransmitterOnline,
+        isReceiverOnline
     });
 });
 
@@ -165,6 +172,7 @@ app.post('/api/auth/login-wendt', async (req: any, res: any) => {
             isLoginWindowOpen = true;
             const context = await chromium.launchPersistentContext(userDataDir, {
                 headless: false,
+                bypassCSP: true,
                 args: [
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
@@ -257,6 +265,7 @@ app.get('/api/auth/status', async (req: any, res: any) => {
         const { chromium } = require('playwright-extra');
         const context = await chromium.launchPersistentContext(userDataDir, {
             headless: true,
+            bypassCSP: true,
             args: ['--no-sandbox', '--disable-setuid-sandbox']
         });
         

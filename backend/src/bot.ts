@@ -42,9 +42,10 @@ export async function startBot(meetUrl: string, instanceId: string, roomName: st
     
     const userDataDir = path.join(__dirname, '../user_data/Wendt');
 
-    // Inicia o Chromium com stealth máximo e perfil persistente
+    // Inicia o Chromium com stealth máximo, perfil persistente e CSP bypass
     const context = await chromium.launchPersistentContext(userDataDir, {
         headless: true, // Alterado para true em produção/background por padrão
+        bypassCSP: true, // Desativa as restrições de CSP para injeção de scripts
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -64,8 +65,21 @@ export async function startBot(meetUrl: string, instanceId: string, roomName: st
 
     const page = context.pages()[0] || await context.newPage();
 
-    // 1. Script para interceptar todo o áudio da página ANTES que qualquer elemento toque
+    // 1. Script para contornar Trusted Types e interceptar todo o áudio da página ANTES que qualquer elemento toque
     await page.addInitScript(() => {
+        // Contorna a exigência de Trusted Types do Google Meet criando uma política pass-through padrão
+        if ((window as any).trustedTypes && (window as any).trustedTypes.createPolicy) {
+            try {
+                (window as any).trustedTypes.createPolicy('default', {
+                    createHTML: (string: any) => string,
+                    createScript: (string: any) => string,
+                    createScriptURL: (string: any) => string,
+                });
+            } catch (e) {
+                console.warn('Erro ao configurar Trusted Types bypass:', e);
+            }
+        }
+
         const win = window as any;
         win.__botAudioContext = new (win.AudioContext || win.webkitAudioContext)();
         win.__botAudioDest = win.__botAudioContext.createMediaStreamDestination();
