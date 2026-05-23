@@ -19,8 +19,9 @@ jobs:
             # Navega até a pasta do projeto (ajuste o caminho de acordo com sua VPS)
             cd /var/www/brainlingo || exit
             
-            # Puxa o código mais recente do GitHub
-            git pull origin main
+            # Puxa o código mais recente do GitHub garantindo sincronia total mesmo com force push
+            git fetch --all
+            git reset --hard origin/main
             
             # --- BUILD FRONTEND ---
             cd frontend
