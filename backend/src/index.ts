@@ -92,13 +92,23 @@ async function getSecondsLeft(): Promise<{ secondsLeft: number; activeMeetingNam
     return { secondsLeft: 0, activeMeetingName: 'Nenhuma', source: 'manual' };
 }
 
+// Variável global para rastrear presença do Transmissor (Brain)
+let lastTransmitterHeartbeat = 0;
+
 // Rota para buscar o status detalhado dos robôs ativos/transição
 app.get('/api/bot/status', async (req: any, res: any) => {
+    const { role } = req.query;
+    if (role === 'transmitter') {
+        lastTransmitterHeartbeat = Date.now();
+    }
+    
+    const isTransmitterOnline = (Date.now() - lastTransmitterHeartbeat) < 7000;
     const baseStatus = botManager.getStatus();
     const timeInfo = await getSecondsLeft();
     res.json({
         ...baseStatus,
-        ...timeInfo
+        ...timeInfo,
+        isTransmitterOnline
     });
 });
 

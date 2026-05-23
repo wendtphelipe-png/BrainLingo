@@ -207,7 +207,7 @@ function AdminDashboard() {
   const [queueSlots, setQueueSlots] = useState<string[]>(Array(12).fill(''));
   const [activeQueueIndex, setActiveQueueIndex] = useState<number>(-1);
   const [bulkText, setBulkText] = useState<string>('');
-  const [showBulk, setShowBulk] = useState<boolean>(false);
+  const [showBulk, setShowBulk] = useState<boolean>(true);
   const [isQueueAdvancing, setIsQueueAdvancing] = useState<boolean>(false);
   const [isLoggingIn, setIsLoggingIn] = useState<boolean>(false);
   const [isWaitingForLogin, setIsWaitingForLogin] = useState<boolean>(false);
@@ -223,6 +223,7 @@ function AdminDashboard() {
   const [autoAdvanceEnabled, setAutoAdvanceEnabled] = useState<boolean>(false);
   const [activeSlotStartTime, setActiveSlotStartTime] = useState<string | null>(null);
   const [openLocalBrowserEnabled, setOpenLocalBrowserEnabled] = useState<boolean>(true);
+  const [isTransmitterOnline, setIsTransmitterOnline] = useState<boolean>(false);
 
   // Handler para Login Persistente da Conta Wendt do Google Meet
   const handleLoginWendt = async () => {
@@ -263,6 +264,7 @@ function AdminDashboard() {
       setSecondsLeft(dataBot.secondsLeft ?? 0);
       setActiveMeetingName(dataBot.activeMeetingName ?? 'Nenhuma');
       setMeetingSource(dataBot.source ?? 'manual');
+      setIsTransmitterOnline(dataBot.isTransmitterOnline ?? false);
 
       const resCal = await fetch('/api/calendar/status');
       const dataCal = await resCal.json();
@@ -526,11 +528,25 @@ function AdminDashboard() {
             <p className="text-xs text-slate-500 font-medium">Orquestrador e Hot-Swap de Reuniões</p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
-          <span className="text-xs text-slate-400 flex items-center gap-1.5 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg">
-            <Settings className="w-3.5 h-3.5" />
-            Modo Administrativo
+        <div className="flex items-center gap-4 flex-wrap justify-end">
+          <span className={`text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-lg border font-medium ${
+            isTransmitterOnline 
+              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_8px_rgba(16,185,129,0.1)]' 
+              : 'bg-slate-800 text-slate-500 border-slate-750'
+          }`}>
+            <span className={`w-2 h-2 rounded-full ${isTransmitterOnline ? 'bg-emerald-400 animate-pulse' : 'bg-slate-650'}`} />
+            {isTransmitterOnline ? 'Transmissor (Brain): ON' : 'Transmissor (Brain): OFF'}
           </span>
+          <span className="text-xs text-slate-400 flex items-center gap-1.5 bg-slate-850 border border-slate-750 px-3 py-1.5 rounded-lg font-semibold">
+            <Settings className="w-3.5 h-3.5" />
+            Modo Receptor (Admin)
+          </span>
+          <button 
+            onClick={() => window.location.href = '/?transmitter=true'}
+            className="text-xs bg-indigo-600/10 hover:bg-indigo-600 text-indigo-400 hover:text-white font-bold px-4 py-2 rounded-lg transition-colors border border-indigo-500/25 flex items-center gap-1"
+          >
+            🔌 Painel Transmissor (Brain)
+          </button>
           <button 
             onClick={() => window.location.href = '/'}
             className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold px-4 py-2 rounded-lg transition-colors border border-slate-700 hover:text-white"
@@ -1002,7 +1018,53 @@ function AdminDashboard() {
         {/* COLUNA DIREITA: Google Calendar e Terminal de Logs (5/12) */}
         <div className="lg:col-span-5 flex flex-col gap-6">
 
-          {/* Card de Configuração da Conta do Robô (went) */}
+          {/* VISUALIZADOR DE STATUS DE CONEXÃO DO TRANSMISSOR (BRAIN) */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl relative overflow-hidden text-left">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl pointer-events-none" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all ${
+                  isTransmitterOnline 
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-lg shadow-emerald-500/10' 
+                    : 'bg-rose-500/10 border-rose-500/30 text-rose-400 animate-pulse'
+                }`}>
+                  <Radio className={`w-5.5 h-5.5 ${isTransmitterOnline ? 'animate-pulse' : ''}`} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+                    Conexão do Transmissor (Brain)
+                  </h3>
+                  <p className="text-[10px] text-slate-500 font-medium">Computador de Apresentação de Áudio</p>
+                </div>
+              </div>
+              
+              <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider flex items-center gap-1.5 ${
+                isTransmitterOnline 
+                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)] animate-pulse' 
+                  : 'bg-rose-500/15 text-rose-400 border border-rose-500/30 shadow-[0_0_10px_rgba(244,63,94,0.1)]'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${isTransmitterOnline ? 'bg-emerald-400 animate-ping' : 'bg-rose-500'}`} />
+                {isTransmitterOnline ? 'Online' : 'Offline'}
+              </span>
+            </div>
+            
+            {/* Mensagem explicativa */}
+            <div className="mt-3.5 pt-3 border-t border-slate-850/60 flex items-start gap-2.5">
+              <AlertCircle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${isTransmitterOnline ? 'text-emerald-400' : 'text-amber-500 animate-pulse'}`} />
+              <p className="text-[10px] text-slate-400 leading-relaxed">
+                {isTransmitterOnline ? (
+                  <>
+                    <strong>Excelente!</strong> O computador transmissor da <strong>Brain</strong> está ativo e respondendo aos comandos de troca de sala em tempo real.
+                  </>
+                ) : (
+                  <>
+                    <strong>Atenção:</strong> O apresentador da <strong>Brain</strong> precisa abrir a página do transmissor para que as trocas de sala ocorram de forma integrada e automática no computador dele.
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
+
           {/* Card de Configuração da Conta do Robô (Wendt) */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
             <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl pointer-events-none" />
@@ -1375,7 +1437,6 @@ function AdminDashboard() {
     </div>
   );
 }
-
 // ---------------------------------------------------------
 // COMPONENTE: TRANSMITTER DASHBOARD (PAINEL DO TRANSMISSOR - BRAIN)
 // ---------------------------------------------------------
@@ -1391,6 +1452,27 @@ function TransmitterDashboard() {
   const [meetingSource, setMeetingSource] = useState<'queue' | 'calendar' | 'manual'>('manual');
   
   const [logs, setLogs] = useState<string[]>([]);
+  
+  // Fila de Reuniões e Controles
+  const [queueSlots, setQueueSlots] = useState<string[]>(Array(12).fill(''));
+  const [activeQueueIndex, setActiveQueueIndex] = useState<number>(-1);
+  const [bulkText, setBulkText] = useState<string>('');
+  const [showBulk, setShowBulk] = useState<boolean>(true);
+  const [isQueueAdvancing, setIsQueueAdvancing] = useState<boolean>(false);
+  
+  const [slotDurationMinutes, setSlotDurationMinutes] = useState<number>(30);
+  const [autoAdvanceEnabled, setAutoAdvanceEnabled] = useState<boolean>(false);
+  const [activeSlotStartTime, setActiveSlotStartTime] = useState<string | null>(null);
+  const [openLocalBrowserEnabled, setOpenLocalBrowserEnabled] = useState<boolean>(true);
+
+  // Sincronização de Calendário
+  const [calendar, setCalendar] = useState<CalendarStatus>({
+    connected: false,
+    autoSync: false,
+    upcoming: []
+  });
+  
+  
   
   const meetWindowRef = useRef<Window | null>(null);
   const lastOpenedUrlRef = useRef<string>('');
@@ -1452,13 +1534,14 @@ function TransmitterDashboard() {
     }
   };
 
-  // Loop de polling do status
+  // Loop de polling do status que envia heartbeat e puxa fila/calendário
   useEffect(() => {
     let interval: any = null;
 
     const pollStatus = async () => {
       try {
-        const res = await fetch('/api/bot/status');
+        // Envia heartbeat avisando que o Transmissor está online e ativo
+        const res = await fetch('/api/bot/status?role=transmitter');
         const data = await res.json();
         setServerConnected(true);
         setActiveBot(data.activeBot);
@@ -1466,6 +1549,21 @@ function TransmitterDashboard() {
         setSecondsLeft(data.secondsLeft ?? 0);
         setActiveMeetingName(data.activeMeetingName ?? 'Nenhuma');
         setMeetingSource(data.source ?? 'manual');
+
+        // Puxa fila
+        const resQueue = await fetch('/api/queue');
+        const dataQueue = await resQueue.json();
+        setQueueSlots(dataQueue.slots);
+        setActiveQueueIndex(dataQueue.activeSlotIndex);
+        setSlotDurationMinutes(dataQueue.slotDurationMinutes ?? 30);
+        setAutoAdvanceEnabled(dataQueue.autoAdvanceEnabled ?? false);
+        setActiveSlotStartTime(dataQueue.activeSlotStartTime ?? null);
+        setOpenLocalBrowserEnabled(dataQueue.openLocalBrowserEnabled ?? true);
+
+        // Puxa calendário
+        const resCal = await fetch('/api/calendar/status');
+        const dataCal = await resCal.json();
+        setCalendar(dataCal);
 
         // URL da reunião atual no orquestrador
         const targetUrl = (data.transitionBot && data.transitionBot.meetUrl) || (data.activeBot && data.activeBot.meetUrl);
@@ -1507,16 +1605,174 @@ function TransmitterDashboard() {
     };
   }, [isActive]);
 
+  // Handlers Fila & Cronômetro
+  const handleSaveQueue = async (updatedSlots: string[]) => {
+    try {
+      const res = await fetch('/api/queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slots: updatedSlots })
+      });
+      const data = await res.json();
+      setQueueSlots(data.slots);
+      setActiveQueueIndex(data.activeSlotIndex);
+    } catch (e) {
+      console.error('Erro ao salvar a fila:', e);
+    }
+  };
+
+  const handleSlotChange = (index: number, val: string) => {
+    const updated = [...queueSlots];
+    updated[index] = val;
+    setQueueSlots(updated);
+  };
+
+  const handleAdvanceQueue = async () => {
+    setIsQueueAdvancing(true);
+    try {
+      const res = await fetch('/api/queue/next', { method: 'POST' });
+      const data = await res.json();
+      if (data.error) {
+        alert(data.error);
+      } else {
+        setActiveQueueIndex(data.queue.activeSlotIndex);
+        setQueueSlots(data.queue.slots);
+        addTransmitterLog(`Avanço de fila solicitado.`);
+      }
+    } catch (e) {
+      alert('Erro ao avançar a fila ou há uma troca já rodando.');
+    } finally {
+      setIsQueueAdvancing(false);
+    }
+  };
+
+  const handleResetQueue = async () => {
+    if (!confirm('Deseja limpar todos os 12 slots da fila?')) return;
+    try {
+      const res = await fetch('/api/queue/reset', { method: 'POST' });
+      const data = await res.json();
+      setQueueSlots(data.slots);
+      setActiveQueueIndex(data.activeSlotIndex);
+      setBulkText('');
+      addTransmitterLog('Fila de reuniões limpa pelo transmissor.');
+    } catch (e) {
+      alert('Erro ao resetar a fila.');
+    }
+  };
+
+  const handleBulkPasteApply = () => {
+    const lines = bulkText.split('\n')
+      .map(line => line.trim())
+      .filter(line => line !== '');
+    
+    const newSlots = Array(12).fill('');
+    for (let i = 0; i < Math.min(lines.length, 12); i++) {
+      newSlots[i] = lines[i];
+    }
+    
+    setQueueSlots(newSlots);
+    setShowBulk(false);
+    handleSaveQueue(newSlots);
+    addTransmitterLog('Fila importada via colagem em lote.');
+  };
+
+  const handleToggleAutoAdvance = async () => {
+    try {
+      const updatedAutoAdvance = !autoAdvanceEnabled;
+      const res = await fetch('/api/queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ autoAdvanceEnabled: updatedAutoAdvance })
+      });
+      const data = await res.json();
+      setAutoAdvanceEnabled(data.autoAdvanceEnabled);
+    } catch (e) {
+      alert('Erro ao alternar o auto-avanço.');
+    }
+  };
+
+  const handleToggleOpenLocalBrowser = async () => {
+    try {
+      const updatedVal = !openLocalBrowserEnabled;
+      const res = await fetch('/api/queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ openLocalBrowserEnabled: updatedVal })
+      });
+      const data = await res.json();
+      setOpenLocalBrowserEnabled(data.openLocalBrowserEnabled ?? true);
+    } catch (e) {
+      alert('Erro ao alternar abertura do navegador.');
+    }
+  };
+
+  const handleChangeDuration = async (minutes: number) => {
+    try {
+      const res = await fetch('/api/queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slotDurationMinutes: minutes })
+      });
+      const data = await res.json();
+      setSlotDurationMinutes(data.slotDurationMinutes);
+    } catch (e) {
+      alert('Erro ao alterar a duração das reuniões.');
+    }
+  };
+
+  // Handlers do Calendário
+  const handleToggleAutoSync = async () => {
+    try {
+      const res = await fetch('/api/calendar/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enable: !calendar.autoSync })
+      });
+      const data = await res.json();
+      setCalendar(prev => ({ ...prev, autoSync: data.autoSync }));
+      addTransmitterLog(`Auto-Sincronização do calendário: ${data.autoSync ? 'ATIVADA' : 'DESATIVADA'}`);
+    } catch (err) {
+      alert('Erro ao alternar sincronização.');
+    }
+  };
+
+  const handleSyncCalendarNow = async () => {
+    try {
+      const res = await fetch('/api/calendar/sync-now', { method: 'POST' });
+      const data = await res.json();
+      if (data.error) {
+        alert(data.error);
+      } else {
+        alert(data.activeMeetUrl 
+          ? `Sincronização completa! Nova reunião ativa disparada: ${data.activeMeetUrl}`
+          : 'Calendário sincronizado. Nenhuma nova reunião ativa agendada para este momento.'
+        );
+        addTransmitterLog('Verificação manual de calendário executada.');
+      }
+    } catch (err) {
+      alert('Erro ao sincronizar calendário.');
+    }
+  };
+
+
+
+  const formatTime = (isoString: string) => {
+    try {
+      return new Date(isoString).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      return '';
+    }
+  };
+
   const handleToggleAutomation = () => {
     const nextState = !isActive;
     setIsActive(nextState);
     if (nextState) {
       addTransmitterLog('🔌 Automação de Troca ATIVADA.');
       
-      // Força abertura imediata da sala se já houver uma ativa
       const currentActiveUrl = (transitionBot && transitionBot.meetUrl) || (activeBot && activeBot.meetUrl);
       if (currentActiveUrl) {
-        lastOpenedUrlRef.current = ''; // Força trigger
+        lastOpenedUrlRef.current = '';
       }
     } else {
       addTransmitterLog('🔌 Automação de Troca DESATIVADA.');
@@ -1542,6 +1798,7 @@ function TransmitterDashboard() {
     }
   };
 
+  const isReceiverOnline = !!activeBot;
   const currentUrl = (transitionBot && transitionBot.meetUrl) || (activeBot && activeBot.meetUrl);
 
   return (
@@ -1555,30 +1812,49 @@ function TransmitterDashboard() {
           </div>
           <div>
             <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">BrainLingo</h1>
-            <p className="text-xs text-slate-500 font-medium">Painel Automático do Transmissor (Brain)</p>
+            <p className="text-xs text-slate-500 font-medium font-semibold">PAINEL DO TRANSMISSOR (BRAIN) - APRESENTAÇÃO</p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
-          <span className={`text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-lg border ${
+        
+        <div className="flex items-center gap-4 flex-wrap justify-end">
+          <span className={`text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-lg border font-medium ${
             serverConnected 
-              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
-              : 'bg-rose-500/10 text-rose-400 border-rose-500/20 animate-pulse'
+              ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' 
+              : 'bg-rose-500/10 text-rose-400 border-rose-500/20 shadow-[0_0_8px_rgba(244,63,94,0.1)] animate-pulse'
           }`}>
-            <div className={`w-2 h-2 rounded-full ${serverConnected ? 'bg-emerald-400' : 'bg-rose-400 animate-ping'}`} />
-            {serverConnected ? 'Servidor Conectado' : 'Sem Conexão'}
+            <span className={`w-2 h-2 rounded-full ${serverConnected ? 'bg-blue-400 animate-pulse' : 'bg-rose-450'}`} />
+            {serverConnected ? 'Conexão VPS: OK' : 'Conexão VPS: FALHA'}
+          </span>
+          <span className={`text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-lg border font-medium ${
+            isReceiverOnline 
+              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_8px_rgba(16,185,129,0.1)]' 
+              : 'bg-slate-800 text-slate-500 border-slate-750'
+          }`}>
+            <span className={`w-2 h-2 rounded-full ${isReceiverOnline ? 'bg-emerald-400 animate-pulse' : 'bg-slate-650'}`} />
+            {isReceiverOnline ? 'Robô Receptor: ONLINE' : 'Robô Receptor: OFFLINE'}
+          </span>
+          <span className="text-xs text-indigo-400 flex items-center gap-1.5 bg-indigo-950 border border-indigo-900 px-3 py-1.5 rounded-lg font-bold">
+            <Settings className="w-3.5 h-3.5" />
+            Modo Transmissor (Brain)
           </span>
           <button 
             onClick={() => window.location.href = '/?admin=true'}
+            className="text-xs bg-blue-600/10 hover:bg-blue-600 text-blue-400 hover:text-white font-bold px-4 py-2 rounded-lg transition-colors border border-blue-500/25 flex items-center gap-1"
+          >
+            ⚙️ Painel Receptor (Admin)
+          </button>
+          <button 
+            onClick={() => window.location.href = '/'}
             className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold px-4 py-2 rounded-lg transition-colors border border-slate-700 hover:text-white"
           >
-            Painel Admin
+            Visualizar Aluno
           </button>
         </div>
       </header>
 
       <main className="flex-1 p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-7xl w-full mx-auto">
         
-        {/* COLUNA ESQUERDA: Automação e Status (7/12) */}
+        {/* COLUNA ESQUERDA: Automação e Controle Fila (7/12) */}
         <div className="lg:col-span-7 flex flex-col gap-6">
           
           {/* Card de Controle Principal */}
@@ -1588,12 +1864,12 @@ function TransmitterDashboard() {
             <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-6">
               <h2 className="text-md font-bold flex items-center gap-2">
                 <Settings className="w-5 h-5 text-indigo-400" />
-                Controle de Troca do Transmissor (Brain)
+                Controle de Troca Automática da Sala
               </h2>
               <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${
                 isActive 
-                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 animate-pulse' 
-                  : 'bg-slate-800 text-slate-500 border border-slate-700'
+                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 animate-pulse' 
+                  : 'bg-slate-800 text-slate-500 border-slate-700'
               }`}>
                 {isActive ? 'Automação Ativa' : 'Parada'}
               </span>
@@ -1614,6 +1890,11 @@ function TransmitterDashboard() {
                 <span className="text-[9px] text-slate-500 font-semibold mt-2">
                   Origem: {meetingSource === 'queue' ? 'Fila de Reuniões' : meetingSource === 'calendar' ? 'Calendário' : 'Manual'}
                 </span>
+                {activeSlotStartTime && secondsLeft > 0 && (
+                  <span className="text-[9px] text-slate-500 font-semibold mt-1">
+                    Iniciado às: {new Date(activeSlotStartTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                )}
               </div>
 
               {/* Status da Reunião */}
@@ -1669,6 +1950,341 @@ function TransmitterDashboard() {
 
           </div>
 
+          {/* NOVO: Fila de Reuniões de Até 12 Slots no Painel do Transmissor */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative text-left">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-5">
+              <h2 className="text-md font-bold flex items-center gap-2">
+                <CalendarIcon className="w-5 h-5 text-indigo-400" />
+                Fila de Reuniões Agendadas (Até 12 Slots)
+              </h2>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setShowBulk(!showBulk)}
+                  className="text-xs bg-slate-800 hover:bg-slate-700 text-indigo-400 font-semibold px-3 py-1.5 rounded-lg border border-slate-700 transition-colors"
+                >
+                  {showBulk ? 'Fechar Colagem' : 'Colar em Lote'}
+                </button>
+                <button 
+                  onClick={handleResetQueue}
+                  className="text-xs bg-rose-950/20 hover:bg-rose-950 text-rose-400 font-semibold px-3 py-1.5 rounded-lg border border-rose-500/10 transition-colors"
+                >
+                  Limpar
+                </button>
+              </div>
+            </div>
+
+            {/* Interface de Colagem em Lote */}
+            {showBulk && (
+              <div className="bg-slate-950 border border-slate-850 p-4 rounded-xl mb-5 space-y-3">
+                <p className="text-xs text-slate-400">
+                  Cole múltiplos links do Google Meet abaixo (um por linha, limite de 12). Eles preencherão os slots automaticamente.
+                </p>
+                <textarea 
+                  value={bulkText}
+                  onChange={(e) => setBulkText(e.target.value)}
+                  placeholder={`https://meet.google.com/aaa-bbbb-ccc\nhttps://meet.google.com/ddd-eeee-fff`}
+                  rows={5}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-lg p-3 text-xs focus:outline-none focus:border-indigo-500 font-mono text-white"
+                />
+                <div className="flex justify-end gap-2">
+                  <button 
+                    onClick={() => setShowBulk(false)}
+                    className="text-xs px-3 py-1.5 rounded-lg bg-slate-800 text-slate-400"
+                  >
+                    Cancelar
+                  </button>
+                  <button 
+                    onClick={handleBulkPasteApply}
+                    className="text-xs px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold"
+                  >
+                    Aplicar Fila
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Grade dos 12 Slots */}
+            <div className="space-y-2.5 max-h-[360px] overflow-y-auto pr-1">
+              {queueSlots.map((slot, index) => {
+                const isActive = index === activeQueueIndex;
+                const isCompleted = index < activeQueueIndex && slot !== '';
+                const isNext = index === activeQueueIndex + 1 || (activeQueueIndex === -1 && index === 0);
+                
+                let badgeClass = "bg-slate-800 text-slate-500 border border-slate-700";
+                let badgeText = "Aguardando";
+                
+                if (isActive) {
+                  badgeClass = "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 animate-pulse";
+                  badgeText = "ATIVO";
+                } else if (isCompleted) {
+                  badgeClass = "bg-slate-950 text-slate-650 border border-slate-900";
+                  badgeText = "Concluído";
+                } else if (isNext && slot !== '') {
+                  badgeClass = "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20";
+                  badgeText = "PRÓXIMO";
+                }
+
+                return (
+                  <div 
+                    key={index}
+                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                      isActive 
+                        ? 'bg-emerald-500/5 border-emerald-500/20' 
+                        : 'bg-slate-950/80 border-slate-900 hover:border-slate-850'
+                    }`}
+                  >
+                    <span className={`text-xs font-bold font-mono w-5 h-5 rounded-full flex items-center justify-center ${
+                      isActive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'
+                    }`}>
+                      {index + 1}
+                    </span>
+
+                    <input 
+                      type="text" 
+                      value={slot}
+                      onChange={(e) => handleSlotChange(index, e.target.value)}
+                      onBlur={() => handleSaveQueue(queueSlots)}
+                      placeholder="Sem agendamento (vazio)"
+                      className={`flex-1 bg-transparent border-none text-xs focus:outline-none placeholder:text-slate-700 font-medium ${
+                        isCompleted ? 'line-through text-slate-550 font-normal' : 'text-slate-200'
+                      }`}
+                    />
+
+                    {slot !== '' && (
+                      <span className={`text-[9px] px-2 py-0.5 rounded font-black uppercase tracking-wider ${badgeClass}`}>
+                        {badgeText}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* NOVO: Configurações da Fila para o Apresentador */}
+            <div className="mt-5 pt-4 border-t border-slate-800 grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
+                  Duração do Slot da Fila
+                </label>
+                <div className="grid grid-cols-4 gap-2">
+                  {[15, 30, 45, 60].map((dur) => (
+                    <button
+                      key={dur}
+                      onClick={() => handleChangeDuration(dur)}
+                      className={`text-xs py-1.5 rounded-lg border font-bold transition-all ${
+                        slotDurationMinutes === dur
+                          ? 'bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-500/10'
+                          : 'bg-slate-950/80 border-slate-850 hover:border-slate-800 text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {dur}m
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {/* Toggle de Auto-Avanço */}
+                <div className="flex items-center justify-between bg-slate-950/60 p-2.5 border border-slate-850/60 rounded-xl">
+                  <div>
+                    <p className="text-xs font-bold text-slate-200 font-medium">Troca Automática ao Zerar</p>
+                    <p className="text-[9px] text-slate-500 mt-0.5">Avança e faz Hot-Swap ao zerar</p>
+                  </div>
+                  <button
+                    onClick={handleToggleAutoAdvance}
+                    className={`w-11 h-6 rounded-full p-0.5 transition-colors duration-300 focus:outline-none flex items-center ${
+                      autoAdvanceEnabled ? 'bg-indigo-650 justify-end' : 'bg-slate-800 justify-start'
+                    }`}
+                  >
+                    <div className="w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-300" />
+                  </button>
+                </div>
+
+                {/* Toggle de Abertura Local do Navegador */}
+                <div className="flex items-center justify-between bg-slate-950/60 p-2.5 border border-slate-850/60 rounded-xl">
+                  <div>
+                    <p className="text-xs font-bold text-slate-200 font-medium">Navegador Local no Receptor</p>
+                    <p className="text-[9px] text-slate-550 mt-0.5">Abre o Meet no Chrome do receptor</p>
+                  </div>
+                  <button
+                    onClick={handleToggleOpenLocalBrowser}
+                    className={`w-11 h-6 rounded-full p-0.5 transition-colors duration-300 focus:outline-none flex items-center ${
+                      openLocalBrowserEnabled ? 'bg-indigo-650 justify-end' : 'bg-slate-800 justify-start'
+                    }`}
+                  >
+                    <div className="w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-300" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Ações de Avanço da Fila */}
+            <div className="mt-5 pt-4 border-t border-slate-800 flex gap-3">
+              <button 
+                onClick={handleAdvanceQueue}
+                disabled={isQueueAdvancing}
+                className="flex-1 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 disabled:from-slate-850 disabled:to-slate-850 text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-indigo-500/10 flex items-center justify-center gap-2 transition-all duration-300"
+              >
+                {isQueueAdvancing ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    Executando Hot-Swap Suave...
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-4 h-4" />
+                    {activeQueueIndex === -1 ? 'Iniciar Reuniões da Fila' : 'Avançar Fila (Hot-Swap Suave)'}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        {/* COLUNA DIREITA: Google Calendar e Logs (5/12) */}
+        <div className="lg:col-span-5 flex flex-col gap-6">
+
+          {/* VISUALIZADOR DE STATUS DE CONEXÃO DO ROBÔ RECEPTOR */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl relative overflow-hidden text-left">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all ${
+                  isReceiverOnline 
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-lg shadow-emerald-500/10' 
+                    : 'bg-rose-500/10 border-rose-500/30 text-rose-400 animate-pulse'
+                }`}>
+                  <Radio className={`w-5.5 h-5.5 ${isReceiverOnline ? 'animate-pulse' : ''}`} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+                    Conexão do Robô Receptor
+                  </h3>
+                  <p className="text-[10px] text-slate-500 font-medium">Conta Google do Robô Tradutor Headless</p>
+                </div>
+              </div>
+              
+              <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider flex items-center gap-1.5 ${
+                isReceiverOnline 
+                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)] animate-pulse' 
+                  : 'bg-rose-500/15 text-rose-400 border border-rose-500/30 shadow-[0_0_10px_rgba(244,63,94,0.1)]'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${isReceiverOnline ? 'bg-emerald-400 animate-ping' : 'bg-rose-500'}`} />
+                {isReceiverOnline ? 'Online' : 'Offline'}
+              </span>
+            </div>
+            
+            {/* Mensagem explicativa */}
+            <div className="mt-3.5 pt-3 border-t border-slate-850/60 flex items-start gap-2.5">
+              <AlertCircle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${isReceiverOnline ? 'text-emerald-400' : 'text-amber-500 animate-pulse'}`} />
+              <p className="text-[10px] text-slate-400 leading-relaxed">
+                {isReceiverOnline ? (
+                  <>
+                    <strong>Robô Ativo!</strong> A automação do receptor headless está conectada à sala e transmitindo o áudio da tradução aos alunos.
+                  </>
+                ) : (
+                  <>
+                    <strong>Robô Ausente:</strong> O robô receptor não está em nenhuma reunião. Inicie a automação pelo painel do administrador para habilitar a escuta dos alunos.
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
+
+          {/* NOVO: Card de Automação com Google Calendar no Painel do Transmissor */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl text-left">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
+              <h2 className="text-md font-bold flex items-center gap-2">
+                <CalendarIcon className="w-5 h-5 text-indigo-400" />
+                Google Calendar Sync
+              </h2>
+              {calendar.connected ? (
+                <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" /> Conectado
+                </span>
+              ) : (
+                <span className="text-[10px] bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" /> Ausente
+                </span>
+              )}
+            </div>
+
+            {calendar.connected ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between bg-slate-950 p-3.5 border border-slate-850 rounded-xl">
+                  <div>
+                    <p className="text-xs font-bold text-slate-200">Sincronização Automática</p>
+                    <p className="text-[10px] text-slate-500 mt-0.5">Troca de bot programada por eventos</p>
+                  </div>
+                  <button 
+                    onClick={handleToggleAutoSync}
+                    className={`w-12 h-6.5 rounded-full p-1 transition-colors duration-300 focus:outline-none flex items-center ${
+                      calendar.autoSync ? 'bg-indigo-600 justify-end' : 'bg-slate-800 justify-start'
+                    }`}
+                  >
+                    <div className="w-4.5 h-4.5 rounded-full bg-white shadow-md transition-transform duration-300" />
+                  </button>
+                </div>
+
+                <button 
+                  onClick={handleSyncCalendarNow}
+                  className="w-full bg-slate-950 hover:bg-slate-800 border border-slate-800 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  Sincronizar Calendário Agora
+                </button>
+
+                <div>
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Próximos Eventos do Dia</h3>
+                  {calendar.upcoming && calendar.upcoming.length > 0 ? (
+                    <div className="space-y-2 max-h-36 overflow-y-auto">
+                      {calendar.upcoming.map((ev) => (
+                        <div 
+                          key={ev.id} 
+                          className={`p-3 rounded-xl border transition-all text-left ${
+                            ev.isActive 
+                              ? 'bg-indigo-500/10 border-indigo-500/30' 
+                              : 'bg-slate-950/80 border-slate-900 hover:border-slate-800'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="text-xs font-bold truncate max-w-[170px]">{ev.summary}</span>
+                            <span className="text-[9px] bg-slate-800 border border-slate-700 px-2 py-0.5 rounded font-mono font-medium whitespace-nowrap text-slate-400">
+                              {formatTime(ev.start)} - {formatTime(ev.end)}
+                            </span>
+                          </div>
+                          {ev.meetLink && (
+                            <div className="mt-2 flex items-center justify-between">
+                              <span className="text-[10px] text-indigo-450 font-mono truncate max-w-[180px]">{ev.meetLink}</span>
+                              {ev.isActive && (
+                                <span className="text-[9px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-1.5 py-0.5 rounded font-black uppercase tracking-wider animate-pulse flex items-center gap-1">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Ativo
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-650 text-center py-4">Nenhum evento do Meet agendado hoje.</p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="py-6 flex flex-col items-center justify-center text-center">
+                <div className="w-12 h-12 rounded-xl bg-slate-800 border border-slate-750 flex items-center justify-center text-slate-500 mb-3">
+                  <CalendarIcon className="w-6 h-6" />
+                </div>
+                <p className="text-xs font-bold text-slate-400">Sincronização Indisponível</p>
+                <p className="text-[11px] text-slate-500 mt-1.5 max-w-[260px] leading-relaxed">
+                  A agenda de reuniões do Google Calendar está desconectada. Caso queira usar o auto-sincronismo, configure o acesso à conta no Painel Administrativo.
+                </p>
+              </div>
+            )}
+          </div>
+
           {/* Guia de Configuração e Preparação */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden text-left">
             <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none" />
@@ -1713,15 +2329,10 @@ function TransmitterDashboard() {
                 </div>
               </div>
             </div>
-
           </div>
 
-        </div>
-
-        {/* COLUNA DIREITA: Terminal de Logs da Automação (5/12) */}
-        <div className="lg:col-span-5 flex flex-col gap-6">
-          
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex-1 flex flex-col min-h-[450px] text-left">
+          {/* Terminal de Logs da Automação (5/12) */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex-1 flex flex-col min-h-[300px] text-left">
             <h2 className="text-md font-bold flex items-center gap-2 mb-4 border-b border-slate-800 pb-3">
               <Terminal className="w-5 h-5 text-indigo-400" />
               Eventos da Automação do Transmissor
