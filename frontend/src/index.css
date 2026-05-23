@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background text-white antialiased m-0 font-sans;
+    min-height: 100vh !important;
+    width: 100vw !important;
+    overflow-y: auto !important;
+  }
+}
