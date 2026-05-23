@@ -183,8 +183,11 @@ export async function startBot(meetUrl: string, instanceId: string, roomName: st
             // Roda o script dentro do contexto do navegador
             await page.evaluate(async ({ url, token }) => {
                 try {
-                    const LivekitClient = (window as any).LivekitClient;
-                    const room = new LivekitClient.Room();
+                    const LiveKitLib = (window as any).LiveKit || (window as any).LivekitClient;
+                    if (!LiveKitLib) {
+                        throw new Error('LiveKit Client SDK não foi encontrado no escopo global (window.LiveKit).');
+                    }
+                    const room = new LiveKitLib.Room();
                     
                     await room.connect(url, token);
                     console.log('Conectado ao LiveKit a partir do navegador!');
@@ -196,7 +199,7 @@ export async function startBot(meetUrl: string, instanceId: string, roomName: st
 
                     if (audioTrack) {
                         // Publica a faixa de áudio na sala do LiveKit
-                        const localAudioTrack = new LivekitClient.LocalAudioTrack(audioTrack);
+                        const localAudioTrack = new LiveKitLib.LocalAudioTrack(audioTrack);
                         await room.localParticipant.publishTrack(localAudioTrack);
                         console.log('Faixa de áudio do Google Meet publicada no LiveKit!');
                         (window as any).onBotReady();
